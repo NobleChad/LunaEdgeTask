@@ -11,12 +11,9 @@ git clone https://github.com/NobleChad/LunaEdgeTask
 cd LunaEdgeTask
 ```
 ## Apply Migrations
-Make sure you have EFCore Tools installed
+Once you open the app run the following commands
 ```
 dotnet tool install --global dotnet-ef
-```
-```
-dotnet ef migrations add Initial
 ```
 ```
 dotnet ef database update
