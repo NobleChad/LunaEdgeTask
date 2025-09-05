@@ -12,6 +12,7 @@ namespace LunaEdgeTask.Services
         public async Task<TaskItem?> GetByIdAsync(Guid id, Guid userId) =>
             await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
+        // Fetch tasks with filtering, sorting, and pagination
         public async Task<List<TaskItem>> GetTasksAsync(Guid userId, Models.TaskStatus? status, TaskPriority? priority,
                                                         DateTime? dueFrom, DateTime? dueTo,
                                                         string sortBy, string sortOrder,
@@ -19,20 +20,24 @@ namespace LunaEdgeTask.Services
         {
             var query = _db.Tasks.Where(t => t.UserId == userId);
 
+            // Apply optional filters
             if (status.HasValue) query = query.Where(t => t.Status == status);
             if (priority.HasValue) query = query.Where(t => t.Priority == priority);
             if (dueFrom.HasValue) query = query.Where(t => t.DueDate >= dueFrom);
             if (dueTo.HasValue) query = query.Where(t => t.DueDate <= dueTo);
 
+            // Sort by requested field and order; default is DueDate ascending
             query = sortBy.ToLower() switch
             {
                 "priority" => sortOrder == "desc" ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority),
                 _ => sortOrder == "desc" ? query.OrderByDescending(t => t.DueDate) : query.OrderBy(t => t.DueDate),
             };
 
+            // Apply pagination
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
 
+        // Count tasks with same filters for pagination
         public async Task<int> CountTasksAsync(Guid userId, Models.TaskStatus? status, TaskPriority? priority, DateTime? dueFrom, DateTime? dueTo)
         {
             var query = _db.Tasks.Where(t => t.UserId == userId);
@@ -51,5 +56,4 @@ namespace LunaEdgeTask.Services
 
         public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
     }
-
 }

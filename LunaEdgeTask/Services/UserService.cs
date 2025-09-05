@@ -23,6 +23,7 @@ namespace LunaEdgeTask.Services
             if (!PasswordValidator.IsValid(dto.Password))
                 return (false, "Password does not meet complexity requirements.");
 
+            // Map DTO → User model and hash the password securely
             var user = _mapper.Map<User>(dto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
@@ -37,6 +38,7 @@ namespace LunaEdgeTask.Services
             var user = await _userRepository.GetByUsernameOrEmailAsync(dto.UsernameOrEmail);
             if (user == null) return null;
 
+            // Verify provided password against stored hash
             return BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash) ? user : null;
         }
 
@@ -44,6 +46,7 @@ namespace LunaEdgeTask.Services
         {
             public static bool IsValid(string password)
             {
+                // Password must be at least 8 chars, include upper, lower, digit, and special character
                 if (string.IsNullOrWhiteSpace(password) || password.Length < 8) return false;
                 return password.Any(char.IsUpper)
                     && password.Any(char.IsLower)
