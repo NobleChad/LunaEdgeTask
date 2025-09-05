@@ -9,6 +9,9 @@ using System.Text;
 
 namespace LunaEdgeTask.Controllers
 {
+    /// <summary>
+    /// Handles user authentication and account management operations.
+    /// </summary>
     [ApiController]
     [Route("users")]
     public class UsersController : ControllerBase
@@ -24,51 +27,41 @@ namespace LunaEdgeTask.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Registers a new user account.
+        /// </summary>
+        /// <param name="dto">User registration details (username, email, password).</param>
+        /// <returns>Success message or error response.</returns>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            try
-            {
-                _logger.LogInformation("Attempting to register user with username {Username} and email {Email}", dto.Username, dto.Email);
-                var result = await _userService.RegisterUserAsync(dto);
-                if (!result.Success)
-                {
-                    _logger.LogWarning("User registration failed for username {Username}: {Message}", dto.Username, result.Message);
-                    return BadRequest(result.Message);
-                }
-                _logger.LogInformation("User {Username} registered successfully", dto.Username);
-                return Ok(new { message = result.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during user registration for username {Username}", dto.Username);
-                throw;
-            }
+            var result = await _userService.RegisterUserAsync(dto);
+            if (!result.Success)
+                return BadRequest(result.Message);
+            return Ok(new { message = result.Message });
         }
 
+        /// <summary>
+        /// Authenticates a user and returns a JWT token.
+        /// </summary>
+        /// <param name="dto">User login details (username/email, password).</param>
+        /// <returns>JWT token if successful, otherwise unauthorized.</returns>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            try
-            {
-                _logger.LogInformation("User login attempt with username {Username}", dto.UsernameOrEmail);
-                var user = await _userService.AuthenticateUserAsync(dto);
-                if (user == null)
-                {
-                    _logger.LogWarning("Login failed for username {Username}: Invalid credentials", dto.UsernameOrEmail);
-                    return Unauthorized("Invalid credentials");
-                }
-                var token = GenerateJwtToken(user);
-                _logger.LogInformation("User {Username} logged in successfully", user.Username);
-                return Ok(new { token });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during login for username {Username}", dto.UsernameOrEmail);
-                throw;
-            }
+            var user = await _userService.AuthenticateUserAsync(dto);
+            if (user == null)
+                return Unauthorized("Invalid credentials");
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
         }
 
+        /// <summary>
+        /// Generates a JWT token for an authenticated user.
+        /// </summary>
+        /// <param name="user">The authenticated user.</param>
+        /// <returns>A signed JWT token string.</returns>
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
