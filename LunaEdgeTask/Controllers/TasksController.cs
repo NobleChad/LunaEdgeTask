@@ -31,7 +31,8 @@ namespace LunaEdgeTask.Controllers
         /// Creates a new task for the authenticated user.
         /// </summary>
         /// <param name="dto">The task details (title, description, priority, due date).</param>
-        /// <returns>The created task (DTO).</returns>
+        /// <response code="200">Task created successfully.</response>
+        /// <response code="400">Validation failed or invalid data provided.</response>
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] TaskDto dto, [FromQuery] string? token)
         {
@@ -54,6 +55,7 @@ namespace LunaEdgeTask.Controllers
         /// <param name="page">Page number (default: 1).</param>
         /// <param name="pageSize">Page size (default: 10).</param>
         /// <returns>Paged list of tasks (DTOs).</returns>
+        /// <response code="200">Tasks retrieved successfully (may be empty).</response>
         [HttpGet]
         public async Task<IActionResult> GetTasks(
             [FromQuery] Models.TaskStatus? status,
@@ -68,8 +70,11 @@ namespace LunaEdgeTask.Controllers
         {
             var userId = GetUserId();
             var (tasks, total) = await _taskService.GetTasksAsync(userId, status, priority, dueFrom, dueTo, sortBy, sortOrder, page, pageSize);
-            var taskDtos = _mapper.Map<List<TaskResponseDto>>(tasks);
 
+            if (tasks.Count == 0)
+                return Ok(new { message = "No tasks found.", page, pageSize, total, tasks = new List<TaskResponseDto>() });
+
+            var taskDtos = _mapper.Map<List<TaskResponseDto>>(tasks);
             return Ok(new { page, pageSize, total, tasks = taskDtos });
         }
 
@@ -78,13 +83,15 @@ namespace LunaEdgeTask.Controllers
         /// </summary>
         /// <param name="id">The task ID.</param>
         /// <returns>The task (DTO) if found, otherwise 404.</returns>
+        /// <response code="200">Task retrieved successfully.</response>
+        /// <response code="404">Task not found or user not authorized.</response>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTask(Guid id, [FromQuery] string? token)
         {
             var userId = GetUserId();
             var task = await _taskService.GetTaskAsync(userId, id);
             if (task == null)
-                return NotFound();
+                return NotFound(new { message = "Task not found or you are not authorized to view it." });
 
             var taskDto = _mapper.Map<TaskResponseDto>(task);
             return Ok(taskDto);
@@ -96,13 +103,16 @@ namespace LunaEdgeTask.Controllers
         /// <param name="id">The task ID.</param>
         /// <param name="dto">Updated task details.</param>
         /// <returns>The updated task (DTO) if successful, otherwise 404.</returns>
+        /// <response code="200">Task updated successfully.</response>
+        /// <response code="400">Validation failed or invalid data provided.</response>
+        /// <response code="404">Task not found or user not authorized.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskDto dto, [FromQuery] string? token)
         {
             var userId = GetUserId();
             var task = await _taskService.UpdateTaskAsync(userId, id, dto);
             if (task == null)
-                return NotFound();
+                return NotFound(new { message = "Task not found or you are not authorized to update it." });
 
             var taskDto = _mapper.Map<TaskResponseDto>(task);
             return Ok(taskDto);
@@ -113,14 +123,17 @@ namespace LunaEdgeTask.Controllers
         /// </summary>
         /// <param name="id">The task ID.</param>
         /// <returns>No content if successful, otherwise 404.</returns>
+        /// <response code="200">Task deleted successfully.</response>
+        /// <response code="404">Task not found or user not authorized.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(Guid id, [FromQuery] string? token)
         {
             var userId = GetUserId();
             var success = await _taskService.DeleteTaskAsync(userId, id);
             if (!success)
-                return NotFound();
-            return NoContent();
+                return NotFound(new { message = "Task not found or you are not authorized to delete it." });
+
+            return Ok(new { message = "Task deleted successfully." });
         }
 
         private Guid GetUserId()

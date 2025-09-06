@@ -32,12 +32,22 @@ namespace LunaEdgeTask.Controllers
         /// </summary>
         /// <param name="dto">User registration details (username, email, password).</param>
         /// <returns>Success message or error response.</returns>
+        /// <response code="200">User registered successfully.</response>
+        /// <response code="400">Validation failed or user already exists.</response>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
+            _logger.LogInformation($"Register attempt for user: {dto.Username}, Email: {dto.Email}");
+
             var result = await _userService.RegisterUserAsync(dto);
+
             if (!result.Success)
-                return BadRequest(result.Message);
+            {
+                _logger.LogWarning($"Registration failed for user: {dto.Username}, Reason: {result.Message}");
+                return BadRequest(new { message = result.Message });
+            }
+
+            _logger.LogInformation($"User registered successfully: {dto.Username}");
             return Ok(new { message = result.Message });
         }
 
@@ -46,22 +56,26 @@ namespace LunaEdgeTask.Controllers
         /// </summary>
         /// <param name="dto">User login details (username/email, password).</param>
         /// <returns>JWT token if successful, otherwise unauthorized.</returns>
+        /// <response code="200">User authenticated successfully and JWT token returned.</response>
+        /// <response code="401">Invalid credentials or authentication failed.</response>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
+            _logger.LogInformation($"Login attempt for user: {dto.UsernameOrEmail}");
+
             var user = await _userService.AuthenticateUserAsync(dto);
+
             if (user == null)
-                return Unauthorized("Invalid credentials");
+            {
+                _logger.LogWarning($"Login failed for user: {dto.UsernameOrEmail}, reason: Invalid credentials");
+                return Unauthorized(new { message = "Invalid credentials" });
+            }
 
             var token = GenerateJwtToken(user);
+            _logger.LogInformation($"User logged in successfully: {dto.UsernameOrEmail}");
             return Ok(new { token });
         }
 
-        /// <summary>
-        /// Generates a JWT token for an authenticated user.
-        /// </summary>
-        /// <param name="user">The authenticated user.</param>
-        /// <returns>A signed JWT token string.</returns>
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
