@@ -21,6 +21,8 @@ namespace LunaEdgeTask.AutoMapper
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.UserId, opt => opt.Ignore()) // UserId set manually
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore()); // UpdatedAt set manually
+
+            CreateMap<TaskItem, TaskResponseDto>();
         }
     }
 }

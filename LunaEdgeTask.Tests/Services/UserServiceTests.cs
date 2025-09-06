@@ -2,6 +2,7 @@ using AutoMapper;
 using LunaEdgeTask.DTOS;
 using LunaEdgeTask.Models;
 using LunaEdgeTask.Services;
+using LunaEdgeTask.Validators;
 using Moq;
 
 namespace LunaEdgeTask.Tests.Services
@@ -163,7 +164,7 @@ namespace LunaEdgeTask.Tests.Services
         [InlineData("Valid1Password!", true)]
         public void PasswordValidator_ShouldValidateCorrectly(string password, bool expected)
         {
-            var result = UserService.PasswordValidator.IsValid(password);
+            var result = PasswordValidator.IsValid(password);
             Assert.Equal(expected, result);
         }
     }

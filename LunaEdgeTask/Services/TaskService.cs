@@ -48,11 +48,9 @@ namespace LunaEdgeTask.Services
 
         public async Task<TaskItem?> UpdateTaskAsync(Guid userId, Guid taskId, TaskDto dto)
         {
-            // Ensure task exists and belongs to user
             var task = await _taskRepository.GetByIdAsync(taskId, userId);
             if (task == null) return null;
 
-            // Map updated values onto the existing entity
             _mapper.Map(dto, task);
             task.UpdatedAt = DateTime.UtcNow;
 
